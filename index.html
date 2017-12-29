@@ -41,8 +41,11 @@
             var walker = document.querySelector('#walker');
 
             raycaster.addEventListener('raycaster-intersection', function (event) {
-                marker.setAttribute('position', event.detail.intersections[0].point);
-                marker.setAttribute('visible', true);
+                const intersection = event.detail.intersections.find(i => i.object.type === 'Scene');
+                if (intersection) {
+                    marker.setAttribute('position', intersection.point);
+                    marker.setAttribute('visible', true);
+                }
             });
 
             raycaster.addEventListener('raycaster-intersection-cleared', function (event) {
@@ -65,7 +68,7 @@
 
                 walker.setAttribute('rotation', { x: 0, y: scene.camera.el.getAttribute('rotation').y, z: 0 });
 
-                const targetPosition = Object.assign({}, raycaster.components.cursor.intersection.point);
+                const targetPosition = raycaster.components.cursor.intersection.point;
                 if (firstTime) {
                     walker.setAttribute('visible', true);
                     walker.setAttribute('position', targetPosition);
