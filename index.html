@@ -9,13 +9,25 @@
     <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
     <script src="https://google-ar.github.io/three.ar.js/dist/three.ar.js"></script>
     <script src="https://rawgit.com/chenzlabs/aframe-ar/827e9db/dist/aframe-ar.min.js"></script>
+    <script>
+        AFRAME.registerComponent('shadow-material', {
+            init: function () {
+                this.material = this.el.getOrCreateObject3D('mesh').material = new THREE.ShadowMaterial();
+                this.material.opacity = 0.3;
+            }
+        });
+    </script>
 </head>
 
 <body>
     <a-scene ar>
         <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster></a-camera>
-        <a-entity id="walker" gltf-model="CesiumMan.glb" position="0 0 -5" scale="0.15 0.15 0.15"
-            animation-mixer visible="false">
+        <a-entity id="walker" position="0 0 -5" visible="false">
+            <a-entity gltf-model="CesiumMan.glb" scale="0.15 0.15 0.15"
+                animation-mixer shadow="cast: true">
+            </a-entity>
+            <a-plane width="2" height="2" position="0 0 0" rotation="-90 0 0" 
+                color="white" shadow="receive: true" shadow-material></a-plane>    
         </a-entity>
         <a-sphere id="intersection" visible="false" radius="0.02" color="red"></a-sphere>
     </a-scene>
