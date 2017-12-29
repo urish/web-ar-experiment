@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAR Animation Experiment</title>
+    <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
+    <script src="https://google-ar.github.io/three.ar.js/dist/three.ar.js"></script>
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/827e9db/dist/aframe-ar.min.js"></script>
+</head>
+
+<body>
+    <a-scene ar>
+        <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster></a-camera>
+        <a-entity id="walker" gltf-model="CesiumMan.glb" position="0 0 -5" scale="0.15 0.15 0.15"
+            animation-mixer visible="false">
+        </a-entity>
+        <a-sphere id="intersection" visible="false" radius="0.02" color="red"></a-sphere>
+    </a-scene>
+
+    <script>
+        var scene = document.querySelector('a-scene');
+
+        function onceSceneLoaded() {
+            var raycaster = document.querySelector('[ar-raycaster]');
+            var marker = document.querySelector('#intersection');
+            var walker = document.querySelector('#walker');
+
+            raycaster.addEventListener('raycaster-intersection', function (event) {
+                marker.setAttribute('position', event.detail.intersections[0].point);
+                marker.setAttribute('visible', true);
+            });
+
+            raycaster.addEventListener('raycaster-intersection-cleared', function (event) {
+                marker.setAttribute('visible', false);
+            });
+
+            function xyz(p) {
+                return `${p.x} ${p.y} ${p.z}`;
+            }
+
+            let firstTime = true;
+            let lastEvent = null;
+
+            raycaster.addEventListener('click', function () {
+                const currentEvent = new Date().getTime();
+                if (lastEvent && (currentEvent - lastEvent < 1000)) {
+                    return;
+                }
+                lastEvent = currentEvent;
+
+                walker.setAttribute('rotation', { x: 0, y: scene.camera.el.getAttribute('rotation').y, z: 0 });
+
+                const targetPosition = Object.assign({}, raycaster.components.cursor.intersection.point);
+                if (firstTime) {
+                    walker.setAttribute('visible', true);
+                    walker.setAttribute('position', targetPosition);
+                    firstTime = false;
+                } else {
+                    const animation = document.createElement('a-animation');
+                    animation.setAttribute('attribute', 'position');
+                    animation.setAttribute('to', xyz(targetPosition));
+                    animation.setAttribute('dur', 5000);
+                    animation.setAttribute('easing', 'linear');
+                    walker.appendChild(animation);
+                }
+            });
+        }
+
+        scene.addEventListener('loaded', onceSceneLoaded);
+    </script>
+</body>
+
+</html>
