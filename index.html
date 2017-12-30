@@ -69,7 +69,7 @@
                 const targetPosition = raycaster.components.cursor.intersection.point;
                 if (firstTime) {
                     walker.setAttribute('visible', true);
-                    walker.setAttribute('position', targetPosition);
+                    walker.setAttribute('position', xyz(targetPosition));
                     firstTime = false;
                 } else {
                     const currentPosition = walker.object3D.position;
