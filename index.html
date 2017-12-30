@@ -23,8 +23,8 @@
     <a-scene ar>
         <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster></a-camera>
         <a-entity id="walker" position="0 0 -5" visible="false">
-            <a-entity gltf-model="CesiumMan.glb" scale="0.15 0.15 0.15" rotation="0 -90 0"
-                animation-mixer shadow="cast: true">
+            <a-entity gltf-model="fox.glb" scale="0.15 0.15 0.15" id="fox"
+                animation-mixer="clip:Fox_Idle" shadow="cast: true">
             </a-entity>
             <a-plane width="2" height="2" position="0 0 0" rotation="-90 0 0" 
                 color="white" shadow="receive: true" shadow-material></a-plane>    
@@ -39,6 +39,7 @@
             var raycaster = document.querySelector('[ar-raycaster]');
             var marker = document.querySelector('#intersection');
             var walker = document.querySelector('#walker');
+            var fox = document.querySelector('#fox');
 
             raycaster.addEventListener('raycaster-intersection', function (event) {
                 const intersection = event.detail.intersections.find(i => i.object.type === 'Scene');
@@ -69,18 +70,21 @@
                 const targetPosition = raycaster.components.cursor.intersection.point;
                 if (firstTime) {
                     walker.setAttribute('visible', true);
-                    walker.setAttribute('position', targetPosition);
+                    walker.setAttribute('position', xyz(targetPosition));
                     firstTime = false;
                 } else {
                     const currentPosition = walker.object3D.position;
                     const newPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
                     const distance = currentPosition.distanceTo(newPosition);
                     walker.object3D.lookAt(newPosition);
+                    fox.setAttribute('animation-mixer', {clip: 'Fox_Run'});
                     const animation = document.createElement('a-animation');
                     animation.setAttribute('attribute', 'position');
                     animation.setAttribute('to', xyz(targetPosition));
-                    animation.setAttribute('dur', distance * 5000);
+                    animation.setAttribute('dur', distance * 3000);
                     animation.setAttribute('easing', 'linear');
+                    animation.addEventListener('animationend',      
+                        () => fox.setAttribute('animation-mixer', {clip: 'Fox_Idle'}));
                     marker.setAttribute('color', 'blue');
                     setTimeout(() => marker.setAttribute('color', 'red'), 350);
                     walker.appendChild(animation);
