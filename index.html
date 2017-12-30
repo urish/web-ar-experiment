@@ -23,7 +23,7 @@
     <a-scene ar>
         <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster></a-camera>
         <a-entity id="walker" position="0 0 -5" visible="false">
-            <a-entity gltf-model="CesiumMan.glb" scale="0.15 0.15 0.15"
+            <a-entity gltf-model="CesiumMan.glb" scale="0.15 0.15 0.15" rotation="0 -90 0"
                 animation-mixer shadow="cast: true">
             </a-entity>
             <a-plane width="2" height="2" position="0 0 0" rotation="-90 0 0" 
@@ -66,19 +66,23 @@
                 }
                 lastEvent = currentEvent;
 
-                walker.setAttribute('rotation', { x: 0, y: scene.camera.el.getAttribute('rotation').y, z: 0 });
-
                 const targetPosition = raycaster.components.cursor.intersection.point;
                 if (firstTime) {
                     walker.setAttribute('visible', true);
                     walker.setAttribute('position', targetPosition);
                     firstTime = false;
                 } else {
+                    const currentPosition = walker.object3D.position;
+                    const newPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
+                    const distance = currentPosition.distanceTo(newPosition);
+                    walker.object3D.lookAt(newPosition);
                     const animation = document.createElement('a-animation');
                     animation.setAttribute('attribute', 'position');
                     animation.setAttribute('to', xyz(targetPosition));
-                    animation.setAttribute('dur', 5000);
+                    animation.setAttribute('dur', distance * 5000);
                     animation.setAttribute('easing', 'linear');
+                    marker.setAttribute('color', 'blue');
+                    setTimeout(() => marker.setAttribute('color', 'red'), 350);
                     walker.appendChild(animation);
                 }
             });
