@@ -23,23 +23,55 @@
     <a-scene ar>
         <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster></a-camera>
         <a-entity id="walker" position="0 0 -5" visible="false">
-            <a-entity gltf-model="models/fox.glb" scale="0.15 0.15 0.15" id="fox"
-                animation-mixer="clip:Fox_Idle" shadow="cast: true">
+            <a-entity gltf-model="models/fox.glb" scale="0.5 0.5 0.5" id="fox" animation-mixer="clip:Fox_Idle" shadow="cast: true">
             </a-entity>
-            <a-plane width="2" height="2" position="0 0 0" rotation="-90 0 0" 
-                color="white" shadow="receive: true" shadow-material></a-plane>    
+            <a-plane width="2" height="2" position="0 0 0" rotation="-90 0 0" color="white" shadow="receive: true" shadow-material></a-plane>
+        </a-entity>
+        <a-entity id="walker2" position="0 0 -5" visible="false">
+            <a-entity gltf-model="models/dino.glb" id="dino"  scale="0.5 0.5 0.5" animation-mixer="clip:Idle" shadow="cast: true">
+            </a-entity>
+            <a-plane width="2" height="2" position="0 0 0" rotation="-90 0 0" color="white" shadow="receive: true" shadow-material></a-plane>
         </a-entity>
         <a-sphere id="intersection" visible="false" radius="0.02" color="red"></a-sphere>
     </a-scene>
 
     <script>
-        var scene = document.querySelector('a-scene');
+        let scene = document.querySelector('a-scene');
+        let walker;
+        let fox;
+        let idleAnimation;
+        let sitting = false;
+
+        function activateFox() {
+            walker = document.querySelector('#walker');
+            fox = document.querySelector('#fox');
+            idleAnimation = 'Fox_Idle';
+            walkAnimation = 'Fox_Run';
+        }
+
+        function activateDino() {
+            walker = document.querySelector('#walker2');
+            fox = document.querySelector('#dino');
+            idleAnimation = 'Idle';
+            walkAnimation = 'Walk';
+        }
+
+        function playAnimation(animation) {
+            if (fox === document.querySelector('#dino')) {
+                sitting = animation.startsWith('Sit') && animation !== 'Sit_Up';
+                fox.setAttribute('animation-mixer', { clip: animation });
+                const listener = () => {
+                    fox.setAttribute('animation-mixer', { clip: sitting ? 'Sit_Idle' : idleAnimation });
+                    fox.removeEventListener('animation-loop', listener);
+                };
+                fox.addEventListener('animation-loop', listener);
+            }
+        }
 
         function onceSceneLoaded() {
-            var raycaster = document.querySelector('[ar-raycaster]');
-            var marker = document.querySelector('#intersection');
-            var walker = document.querySelector('#walker');
-            var fox = document.querySelector('#fox');
+            let raycaster = document.querySelector('[ar-raycaster]');
+            let marker = document.querySelector('#intersection');
+            activateFox();
 
             raycaster.addEventListener('raycaster-intersection', function (event) {
                 const intersection = event.detail.intersections.find(i => i.object.type === 'Scene');
@@ -57,7 +89,6 @@
                 return `${p.x} ${p.y} ${p.z}`;
             }
 
-            let firstTime = true;
             let lastEvent = null;
 
             raycaster.addEventListener('click', function () {
@@ -68,29 +99,78 @@
                 lastEvent = currentEvent;
 
                 const targetPosition = raycaster.components.cursor.intersection.point;
-                if (firstTime) {
+                if (!walker.getAttribute('visible')) {
                     walker.setAttribute('visible', true);
                     walker.setAttribute('position', xyz(targetPosition));
-                    firstTime = false;
                 } else {
                     const currentPosition = walker.object3D.position;
                     const newPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
                     const distance = currentPosition.distanceTo(newPosition);
                     walker.object3D.lookAt(newPosition);
-                    fox.setAttribute('animation-mixer', {clip: 'Fox_Run'});
+                    fox.setAttribute('animation-mixer', { clip: walkAnimation });
                     const animation = document.createElement('a-animation');
                     animation.setAttribute('attribute', 'position');
                     animation.setAttribute('to', xyz(targetPosition));
                     animation.setAttribute('dur', distance * 3000);
                     animation.setAttribute('easing', 'linear');
-                    animation.addEventListener('animationend',      
-                        () => fox.setAttribute('animation-mixer', {clip: 'Fox_Idle'}));
+                    animation.addEventListener('animationend',
+                        () => fox.setAttribute('animation-mixer', { clip: idleAnimation }));
                     marker.setAttribute('color', 'blue');
                     setTimeout(() => marker.setAttribute('color', 'red'), 350);
                     walker.appendChild(animation);
                 }
             });
         }
+
+        function onCommand(results) {
+            recognition.start();
+            for (const result of results) {
+                for (const { transcript } of Array.from(result)) {
+                    if (transcript.toLowerCase().includes('dino') || transcript.toLowerCase().includes('dina')) {
+                        activateDino();
+                    }
+                    if (transcript.toLowerCase().includes('fox')) {
+                        activateFox();
+                    }
+                    const animations = sitting ? {
+                        'Sit up': 'Sit_Up',
+                        'Eat': 'Sit_Eat',
+                        'Chew': 'Sit_Chew',
+                        'Look left': 'Sit_Head_Left',
+                        'Look right': 'Sit_Head_Right', 
+                    } : {
+                        'Look left': 'Head_Left',
+                        'Look right': 'Head_Right', 
+                        'Chew': 'Chew',
+                        'Drink': 'Drink',
+                        'Jump': 'Jump',
+                        'Head': 'Attack1',
+                        'Attack': 'Attack2',
+                        'Sit Down': 'Sit',
+                        'Eat': 'Eat2',
+                        'Run': 'Run',
+                    };
+                    for (const animationKey of Object.keys(animations)) {
+                        if (transcript.toLowerCase().includes(animationKey.toLowerCase())) {
+                            playAnimation(animations[animationKey]);
+                            return;
+                        }
+                    }
+                    if (transcript.toLowerCase().includes('random')) {
+                        const animationKey = Object.keys(animations)[Math.floor(Math.random() * Object.keys(animations).length)];
+                        playAnimation(animations[animationKey]);
+                        return;
+                    }
+                }
+            }
+        }
+
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.maxAlternatives = 5;
+        recognition.onresult = ({results}) => onCommand(results);
+        recognition.onerror = () => setTimeout(() => recognition.start(), 500);
+        recognition.start();
 
         scene.addEventListener('loaded', onceSceneLoaded);
     </script>
