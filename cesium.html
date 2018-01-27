@@ -1,95 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAR Animation Experiment</title>
+  <head>
+    <title>Web AR Experiment</title>
     <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
     <script src="https://google-ar.github.io/three.ar.js/dist/three.ar.js"></script>
     <script src="https://rawgit.com/chenzlabs/aframe-ar/827e9db/dist/aframe-ar.min.js"></script>
-    <script>
-        AFRAME.registerComponent('shadow-material', {
-            init: function () {
-                this.material = this.el.getOrCreateObject3D('mesh').material = new THREE.ShadowMaterial();
-                this.material.opacity = 0.3;
-            }
-        });
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
+    <script type="text/javascript">
+      AFRAME.registerComponent('shadow-material', {
+        init() {
+            this.material = new THREE.ShadowMaterial();
+            this.el.getOrCreateObject3D('mesh').material = this.material;
+            this.material.opacity = 0.3;
+        }
+      });
     </script>
-</head>
+  </head>
 
-<body>
+  <body>
     <a-scene ar>
-        <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster></a-camera>
-        <a-entity id="walker" position="0 0 -5" visible="false">
-            <a-entity gltf-model="models/CesiumMan.glb" scale="0.15 0.15 0.15" rotation="0 -90 0"
-                animation-mixer shadow="cast: true">
-            </a-entity>
-            <a-plane width="2" height="2" position="0 0 0" rotation="-90 0 0" 
-                color="white" shadow="receive: true" shadow-material></a-plane>    
+      <a-camera ar-raycaster raycaster cursor="fuse:false"></a-camera>
+      <a-assets>
+        <a-asset id="cesium-man" src="https://cdn.rawgit.com/KhronosGroup/glTF-Sample-Models/29355d23/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"></a-asset>
+      </a-assets>
+      <a-entity id="walker">
+        <a-entity gltf-model="#cesium-man" scale="0.15 0.15 0.15" rotation="0 -90 0" animation-mixer
+                  shadow="cast: true">
         </a-entity>
-        <a-sphere id="intersection" visible="false" radius="0.02" color="red"></a-sphere>
+        <a-plane width="0.5" height="0.5" position="0 0 0" rotation="-90 0 0" 
+                color="white" shadow="receive: true" shadow-material></a-plane>
+      </a-entity>
+      <a-ring id="cursor" color="teal" radius-inner="0.02" radius-outer="0.03" position="0 -3 -3" rotation="-90 0 0"></a-ring>
     </a-scene>
 
-    <script>
-        var scene = document.querySelector('a-scene');
+    <script type="text/javascript">
+      function onSceneLoaded() {
+        const raycaster = document.querySelector('[ar-raycaster]');
+        const cursor = document.querySelector('#cursor');
+        raycaster.addEventListener('raycaster-intersection', (event) => {
+          cursor.setAttribute('position', event.detail.intersections[0].point);
+        });
 
-        function onceSceneLoaded() {
-            var raycaster = document.querySelector('[ar-raycaster]');
-            var marker = document.querySelector('#intersection');
-            var walker = document.querySelector('#walker');
+        const walker = document.querySelector('#walker');
+        const { stringify } = AFRAME.utils.coordinates;
 
-            raycaster.addEventListener('raycaster-intersection', function (event) {
-                const intersection = event.detail.intersections.find(i => i.object.type === 'Scene');
-                if (intersection) {
-                    marker.setAttribute('position', intersection.point);
-                    marker.setAttribute('visible', true);
-                }
-            });
+        let firstTime = true;
+        raycaster.addEventListener('click', () => {
+          const target = raycaster.components.cursor.intersection.point;
 
-            raycaster.addEventListener('raycaster-intersection-cleared', function (event) {
-                marker.setAttribute('visible', false);
-            });
+          if (firstTime) {
+            walker.setAttribute('position', target);
+            firstTime = false;
+          } else {
+            const currentPosition = walker.object3D.position;
+            const distance = currentPosition.distanceTo(target);
 
-            function xyz(p) {
-                return `${p.x} ${p.y} ${p.z}`;
-            }
+            walker.object3D.lookAt(target);
 
-            let firstTime = true;
-            let lastEvent = null;
+            const animation = document.createElement('a-animation');
+            animation.setAttribute('attribute', 'position');
+            animation.setAttribute('to', stringify(target));
+            animation.setAttribute('dur', distance * 7000);
+            animation.setAttribute('easing', 'linear');
+            walker.appendChild(animation);
+          }
+        });
+      }
 
-            raycaster.addEventListener('click', function () {
-                const currentEvent = new Date().getTime();
-                if (lastEvent && (currentEvent - lastEvent < 1000)) {
-                    return;
-                }
-                lastEvent = currentEvent;
-
-                const targetPosition = raycaster.components.cursor.intersection.point;
-                if (firstTime) {
-                    walker.setAttribute('visible', true);
-                    walker.setAttribute('position', xyz(targetPosition));
-                    firstTime = false;
-                } else {
-                    const currentPosition = walker.object3D.position;
-                    const newPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
-                    const distance = currentPosition.distanceTo(newPosition);
-                    walker.object3D.lookAt(newPosition);
-                    const animation = document.createElement('a-animation');
-                    animation.setAttribute('attribute', 'position');
-                    animation.setAttribute('to', xyz(targetPosition));
-                    animation.setAttribute('dur', distance * 5000);
-                    animation.setAttribute('easing', 'linear');
-                    marker.setAttribute('color', 'blue');
-                    setTimeout(() => marker.setAttribute('color', 'red'), 350);
-                    walker.appendChild(animation);
-                }
-            });
-        }
-
-        scene.addEventListener('loaded', onceSceneLoaded);
+      const scene = document.querySelector('a-scene');
+      scene.addEventListener('loaded', onSceneLoaded);
     </script>
-</body>
-
+  </body>
 </html>
