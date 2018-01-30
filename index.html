@@ -85,12 +85,9 @@
                 marker.setAttribute('visible', false);
             });
 
-            function xyz(p) {
-                return `${p.x} ${p.y} ${p.z}`;
-            }
+            const { stringify } = AFRAME.utils.coordinates;
 
             let lastEvent = null;
-
             raycaster.addEventListener('click', function () {
                 const currentEvent = new Date().getTime();
                 if (lastEvent && (currentEvent - lastEvent < 1000)) {
@@ -101,16 +98,15 @@
                 const targetPosition = raycaster.components.cursor.intersection.point;
                 if (!walker.getAttribute('visible')) {
                     walker.setAttribute('visible', true);
-                    walker.setAttribute('position', xyz(targetPosition));
+                    walker.setAttribute('position', stringify(targetPosition));
                 } else {
                     const currentPosition = walker.object3D.position;
-                    const newPosition = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
-                    const distance = currentPosition.distanceTo(newPosition);
-                    walker.object3D.lookAt(newPosition);
+                    const distance = currentPosition.distanceTo(targetPosition);
+                    walker.object3D.lookAt(targetPosition);
                     fox.setAttribute('animation-mixer', { clip: walkAnimation });
                     const animation = document.createElement('a-animation');
                     animation.setAttribute('attribute', 'position');
-                    animation.setAttribute('to', xyz(targetPosition));
+                    animation.setAttribute('to', stringify(targetPosition));
                     animation.setAttribute('dur', distance * 3000);
                     animation.setAttribute('easing', 'linear');
                     animation.addEventListener('animationend',
