@@ -121,7 +121,7 @@
                 }
             });
         }
-/*
+
         function onCommand(results) {
             recognition.start();
             for (const result of results) {
@@ -171,7 +171,7 @@
         recognition.onresult = ({results}) => onCommand(results);
         recognition.onerror = () => setTimeout(() => recognition.start(), 500);
         recognition.start();
-*/
+
         scene.addEventListener('loaded', onceSceneLoaded);
     </script>
 </body>
