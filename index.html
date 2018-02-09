@@ -8,7 +8,7 @@
     <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
     <script src="https://google-ar.github.io/three.ar.js/dist/three.ar.js"></script>
-    <script src="https://rawgit.com/chenzlabs/aframe-ar/827e9db/dist/aframe-ar.min.js"></script>
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/73c5e83/dist/aframe-ar.min.js"></script>
     <script>
         AFRAME.registerComponent('shadow-material', {
             init: function () {
@@ -17,11 +17,14 @@
             }
         });
     </script>
+    <!-- Prevent touch causing flicker on iOS. -->
+    <style> * { -webkit-tap-highlight-color: rgba(0,0,0,0); } </style>        
 </head>
 
 <body>
     <a-scene ar>
-        <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster></a-camera>
+        <!-- Specify raycaster="objects:none" to avoid intersections with A-Frame entities like the fox. -->
+        <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster="objects:none"></a-camera>
         <a-entity id="walker" position="0 0 -5" visible="false">
             <a-entity gltf-model="models/fox.glb" scale="0.5 0.5 0.5" id="fox" animation-mixer="clip:Fox_Idle" shadow="cast: true">
             </a-entity>
@@ -74,15 +77,16 @@
             activateFox();
 
             raycaster.addEventListener('raycaster-intersection', function (event) {
-                const intersection = event.detail.intersections.find(i => i.object.type === 'Scene');
+                const intersection = event.detail.intersections[0]; //.find(i => i.object.type === 'Scene');
                 if (intersection) {
                     marker.setAttribute('position', intersection.point);
                     marker.setAttribute('visible', true);
+                    marker.setAttribute('color', 'green');
                 }
             });
 
             raycaster.addEventListener('raycaster-intersection-cleared', function (event) {
-                marker.setAttribute('visible', false);
+                marker.setAttribute('color', 'red');
             });
 
             const { stringify } = AFRAME.utils.coordinates;
@@ -112,7 +116,7 @@
                     animation.addEventListener('animationend',
                         () => fox.setAttribute('animation-mixer', { clip: idleAnimation }));
                     marker.setAttribute('color', 'blue');
-                    setTimeout(() => marker.setAttribute('color', 'red'), 350);
+                    setTimeout(() => marker.setAttribute('color', 'green'), 350);
                     walker.appendChild(animation);
                 }
             });
@@ -161,12 +165,16 @@
             }
         }
 
+        try {
+            
         recognition = new webkitSpeechRecognition();
         recognition.continuous = true;
         recognition.maxAlternatives = 5;
         recognition.onresult = ({results}) => onCommand(results);
         recognition.onerror = () => setTimeout(() => recognition.start(), 500);
         recognition.start();
+
+        } catch (err) { console.error(err.message); }
 
         scene.addEventListener('loaded', onceSceneLoaded);
     </script>
