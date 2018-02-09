@@ -165,12 +165,16 @@
             }
         }
 
+        try {
+            
         recognition = new webkitSpeechRecognition();
         recognition.continuous = true;
         recognition.maxAlternatives = 5;
         recognition.onresult = ({results}) => onCommand(results);
         recognition.onerror = () => setTimeout(() => recognition.start(), 500);
         recognition.start();
+
+        } catch (err) { console.error(err.message); }
 
         scene.addEventListener('loaded', onceSceneLoaded);
     </script>
