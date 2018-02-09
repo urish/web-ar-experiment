@@ -80,13 +80,14 @@
                 if (intersection) {
                     marker.setAttribute('position', intersection.point);
                     marker.setAttribute('visible', true);
+                    marker.setAttribute('color', 'green');
                 }
             });
-/*
+
             raycaster.addEventListener('raycaster-intersection-cleared', function (event) {
-                marker.setAttribute('visible', false);
+                marker.setAttribute('color', 'red');
             });
-*/
+
             const { stringify } = AFRAME.utils.coordinates;
 
             let lastEvent = null;
@@ -114,7 +115,7 @@
                     animation.addEventListener('animationend',
                         () => fox.setAttribute('animation-mixer', { clip: idleAnimation }));
                     marker.setAttribute('color', 'blue');
-                    setTimeout(() => marker.setAttribute('color', 'red'), 350);
+                    setTimeout(() => marker.setAttribute('color', 'green'), 350);
                     walker.appendChild(animation);
                 }
             });
