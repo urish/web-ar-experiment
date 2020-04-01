@@ -2,10 +2,9 @@
 <html lang="en">
   <head>
     <title>Web AR Experiment</title>
-    <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
-    <script src="https://rawgit.com/chenzlabs/three.ar.js/0f645a5/dist/three.ar.min.js"></script>
-    <script src="https://rawgit.com/chenzlabs/aframe-ar/0cf8d5a/dist/aframe-ar.min.js"></script>
-    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/30021597/dist/aframe-ar.min.js"></script>
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/fe293f78/dist/aframe-extras.js"></script>
     <script type="text/javascript">
       AFRAME.registerComponent('shadow-material', {
         init() {
@@ -20,7 +19,7 @@
   </head>
 
   <body>
-    <a-scene ar>
+    <a-scene ar="worldSensing:true">
       <a-camera ar-raycaster raycaster cursor="fuse:false"></a-camera>
       <a-assets>
         <a-asset id="cesium-man" src="https://cdn.rawgit.com/KhronosGroup/glTF-Sample-Models/29355d23/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"></a-asset>
