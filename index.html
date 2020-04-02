@@ -5,10 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebAR Animation Experiment</title>
-    <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
-    <script src="https://rawgit.com/chenzlabs/three.ar.js/0f645a5/dist/three.ar.min.js"></script>
-    <script src="https://rawgit.com/chenzlabs/aframe-ar/0cf8d5a/dist/aframe-ar.min.js"></script>
+  	<script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@master/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
+	  <script src="https://cdn.jsdelivr.net/gh/chenzlabs/aframe-ar@aframe-next/dist/aframe-ar.min.js"></script>
+    <script>
+    
+    // AFRAME no longer sends intersection event every time intersection changes position;
+    // this component is modified from docs to move a different entity than the one hit.
+    AFRAME.registerComponent('raycaster-move', {
+        schema: {
+            target: {type: 'selector'}
+        },
+        init: function () {
+            // Use events to figure out what raycaster is listening so we don't have to
+            // hardcode the raycaster.
+            this.el.addEventListener('raycaster-intersected', evt => {
+                this.raycaster = evt.detail.el;
+            });
+            this.el.addEventListener('raycaster-intersected-cleared', evt => {
+                this.raycaster = null;
+            });
+        },
+        update: function (oldData) {
+            //
+        },
+        tick: function () {
+            if (!this.raycaster) { return; }  // Not intersecting.
+
+            let intersection = this.raycaster.components.raycaster.getIntersection(this.el);
+            if (!intersection) { return; }
+            //console.log(intersection.point);
+            this.data.target.setAttribute("position", intersection.point);
+        }
+    });
+    
+    </script>    
+
     <script>
         AFRAME.registerComponent('shadow-material', {
             init: function () {
@@ -22,7 +54,7 @@
 </head>
 
 <body>
-    <a-scene ar>
+    <a-scene ar raycaster-move="target:#intersection">
         <!-- Specify raycaster="objects:none" to avoid intersections with A-Frame entities like the fox. -->
         <a-camera user-height="0" cursor="fuse:false" ar-raycaster raycaster="objects:none"></a-camera>
         <a-entity id="walker" position="0 0 -5" visible="false">
