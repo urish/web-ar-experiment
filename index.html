@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebAR Animation Experiment</title>
-  	<script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@master/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@e47f441/dist/aframe-master.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
-	  <script src="https://cdn.jsdelivr.net/gh/chenzlabs/aframe-ar@4c947c6/dist/aframe-ar.min.js"></script>
+    <script src="https://ghcdn.rawgit.org/chenzlabs/aframe-ar/v0.3.1/dist/aframe-ar.min.js"></script>
     <script>
     
     // AFRAME no longer sends intersection event every time intersection changes position;
@@ -131,31 +131,48 @@
                 }
                 lastEvent = currentEvent;
 
-                const targetPosition = raycaster.components.cursor.intersection.point;
+                const targetPosition = raycaster.components.cursor
+                  // this is broken in current A-Frame 1.0.x --> .intersection.point;
+                  .intersectedEventDetail.intersection.point;
                 if (!walker.getAttribute('visible')) {
                     walker.setAttribute('visible', true);
                     walker.setAttribute('position', stringify(targetPosition));
                 } else {
                     const currentPosition = walker.object3D.position;
                     const distance = currentPosition.distanceTo(targetPosition);
+                    // face the right way
                     walker.object3D.lookAt(targetPosition);
+                    // make it look like it's walking
                     fox.setAttribute('animation-mixer', { clip: walkAnimation });
-                    const animation = document.createElement('a-animation');
-                    animation.setAttribute('attribute', 'position');
-                    animation.setAttribute('to', stringify(targetPosition));
-                    animation.setAttribute('dur', distance * 3000);
-                    animation.setAttribute('easing', 'linear');
-                    animation.addEventListener('animationend',
-                        () => fox.setAttribute('animation-mixer', { clip: idleAnimation }));
+                    // only add completion listener once
+                    if (!walker.getAttribute('animation')) {
+                      // once it's there,
+                      walker.addEventListener('animationcomplete', () => { 
+                        // make it look like it's idle                    
+                        fox.setAttribute('animation-mixer', { clip: idleAnimation });
+                      });
+                    }
+                    // set the animation in new A-Frame 1.0.x style
+                    walker.setAttribute('animation', {
+                      property: 'position',
+                      to: stringify(targetPosition), // just targetPosition doesn't work!?
+                      dur: distance * 3000,
+                      easing: 'linear'                      
+                    });
+                    // toggle marker color to show we're doing it 
                     marker.setAttribute('color', 'blue');
                     setTimeout(() => marker.setAttribute('color', 'green'), 350);
-                    walker.appendChild(animation);
                 }
             });
         }
 
+        function tryAgain() {
+            recognition.stop();
+            setTimeout(() => { recognition.start(); });          
+        }
+      
         function onCommand(results) {
-            recognition.start();
+            tryAgain();
             for (const result of results) {
                 for (const { transcript } of Array.from(result)) {
                     if (transcript.toLowerCase().includes('dino') || transcript.toLowerCase().includes('dina')) {
@@ -203,7 +220,7 @@
         recognition.continuous = true;
         recognition.maxAlternatives = 5;
         recognition.onresult = ({results}) => onCommand(results);
-        recognition.onerror = () => setTimeout(() => recognition.start(), 500);
+        recognition.onerror = () => setTimeout(tryAgain, 500);
         recognition.start();
 
         } catch (err) { console.error(err.message); }
