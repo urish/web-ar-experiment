@@ -19,3 +19,7 @@ First, you need to install either [WebARonARCore](https://github.com/google-ar/W
 * iPhone 7 / 7 Plus or newer
 
 Then, you can visit the [live demo](https://urish.github.io/web-ar-experiment/).
+
+
+
+Made with Love
